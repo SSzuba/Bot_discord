@@ -24,7 +24,7 @@ def get_articles(url, articlesType):
             "type": articlesType
         })
         counter += 1
-        if counter > 20:
+        if counter > 30:
             exit()
 
     articles = driver.find_elements_by_tag_name('h4')
