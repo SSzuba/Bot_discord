@@ -1,6 +1,6 @@
 import os
 import discord
-import get_data
+import use_data
 from discord.ext import commands
 
 TOKEN = 'OTYxOTIyMzI4MDAwODg0NzM3.YlAB-g.jEsaYZnYSLJL-e2474pHd0pCB7k'
@@ -31,6 +31,14 @@ async def on_message(message):
 async def square(ctx, arg): # The name of the function is the name of the command
     print(arg) # this is the text that follows the command
     await ctx.send(int(arg) ** 2) # ctx.send sends text in chat
+
+@bot.command()
+async def news(ctx):
+    use_data.get_articles()
+    for i in range(5):
+        title = use_data.titles[i]
+        url = use_data.urls[i]
+        await ctx.send(str(title + " " + url))
 
 
 bot.run(TOKEN)

@@ -53,3 +53,4 @@ custom_url = "https://news.google.com/search?q=" + \
 get_articles(custom_url, search_title)
 
 driver.close()
+driver.quit()
