@@ -2,7 +2,9 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from pysondb import db
+import os
 
+os.remove("db.json")
 database = db.getDb("db.json")
 
 driver = webdriver.Chrome()
@@ -42,8 +44,8 @@ def get_articles(url, articlesType):
 
 
 # artykuły ogólnej tematyki
-get_articles(
-    "https://news.google.com/topstories?hl=pl&gl=PL&ceid=PL:pl", "general")
+#get_articles(
+#    "https://news.google.com/topstories?hl=pl&gl=PL&ceid=PL:pl", "general")
 
 # spersonalizowane tematy
 search_title = "wiadomości sportowe z piłki nożnej"
