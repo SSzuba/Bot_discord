@@ -11,7 +11,6 @@ database = db.getDb("db.json")
 
 driver = webdriver.Chrome()
 
-
 def get_sport_articles():
 
     for s in sites_list:
@@ -27,26 +26,25 @@ def get_sport_articles():
             for a in articles:
                 title = str(a.text)
                 if title != '' and len(title) > 20 and counter < 5:
-                    print(len(title))
-                    print(str(a.text))
                     links = driver.find_elements_by_tag_name("a")
                     for l in links:
                         linkUrl = str(l.get_attribute('href'))
-                        if linkUrl and SequenceMatcher(None, title, linkUrl).ratio() > 0.33:
+                        if linkUrl and SequenceMatcher(None, title, linkUrl).ratio() > 0.3:
                             q = {"title": title}
                             data = database.getByQuery(query=q)
-                            print(data)
-                            print(linkUrl)
-                            item = {
-                                "title": title,
-                                "url": linkUrl,
-                                "type": 'sport',
-                                "site": s
-                            }
-                            
-                            if SequenceMatcher(None, data, item).ratio() < 0.5:
-                                database.add(item)
-                                counter += 1
+                            if data:
+                                continue
+                            else:
+                                item = {
+                                    "title": title,
+                                    "url": linkUrl,
+                                    "type": 'sport',
+                                    "site": s
+                                }
+                                helpData = item
+                                if SequenceMatcher(None, data, item).ratio() < 0.1:
+                                    database.add(item)
+                                    counter += 1
 
 
 sites_list = []

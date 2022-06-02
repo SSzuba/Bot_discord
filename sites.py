@@ -10,7 +10,6 @@ sites = [
 
 sport_sites = [
     'meczyki.pl',
-    'sport.pl',
     'polsatsport.pl',
     'gol24.pl'
 ]
