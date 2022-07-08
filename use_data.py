@@ -6,8 +6,9 @@ urls = []
 
 
 def get_articles():
-    data = database.getBy({"type": "wiadomości sportowe z piłki nożnej"})
-    for i in range(5):
-        titles.insert(i, data[i]["title"])
-        urls.insert(i, data[i]["url"])
-        print(titles[i] + " " + urls[i])
+    data = database.getBy({"type": "sport"})
+    title = data[0]["title"]
+    url = data[0]["url"]
+    #print(titles[0] + " " + urls[0])
+    msg = title + " " + url
+    return msg

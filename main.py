@@ -3,7 +3,7 @@ import discord
 import use_data
 from discord.ext import commands
 
-TOKEN = 'OTYxOTIyMzI4MDAwODg0NzM3.YlAB-g.jEsaYZnYSLJL-e2474pHd0pCB7k'
+TOKEN = 'OTYxOTIyMzI4MDAwODg0NzM3.G3DcYT.ArU5lRWsFaD5cs4YWU75tT-F8cix_NRdpNPBGM'
 
 bot = commands.Bot(command_prefix="!")
 
@@ -34,11 +34,8 @@ async def square(ctx, arg): # The name of the function is the name of the comman
 
 @bot.command()
 async def news(ctx):
-    use_data.get_articles()
-    for i in range(5):
-        title = use_data.titles[i]
-        url = use_data.urls[i]
-        await ctx.send(str(title + " " + url))
+    msg = use_data.get_articles()
+    await ctx.send(str(msg))
 
 
 bot.run(TOKEN)
