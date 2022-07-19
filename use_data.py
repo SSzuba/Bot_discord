@@ -13,12 +13,12 @@ def get_newest_article():
         time = data[d]["timeAdd"]
         time = re.search(reg, str(time))
         time = str(datetime.strptime(time.group(), '%H:%M').time())
-        timeAsNumber = time.replace(":","")
-        if int(timeAsNumber) > temp:
+        timeAsNumber = int(time.replace(":",""))
+        if temp < timeAsNumber:
             temp = timeAsNumber
-            return data[d]["title"] + " " + data[d]["url"]
-        else: 
-            continue
+            msg = data[d]["title"] + " " + data[d]["url"]
+        
+    return msg
         
 
 def get_articles():
@@ -27,4 +27,5 @@ def get_articles():
         title = (i, data[i]["title"])
         url = (i, data[i]["url"])
         return title + " " + url
+
 print(get_newest_article())
