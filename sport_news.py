@@ -8,65 +8,79 @@ from difflib import SequenceMatcher
 import re
 from datetime import datetime
 
-os.remove("db.json")
 database = db.getDb("db.json")
+databaseD = db.getDb("details.json")
 driver = webdriver.Chrome()
-c = 1
 
 def get_sport_articles():
+    os.remove("db.json")
+    database = db.getDb("db.json")
     for s in sites_list:
-
-        counter = 0
-
         driver.get(s)
-        # driver.find_element_by_tag_name("body").send_keys(Keys.END)
-        #buttons = driver.find_elements_by_tag_name("button")
-        # coockies_accept(buttons)
-        origin = driver.current_window_handle         
         articlesTags = ['h1', 'h2', 'h3', 'h4', 'a']
-        timeTags = ['a', 'span', 'time']
+        linkChecker = ''
+        titleChecker = ''
+        counter = 0
+        driver.find_element_by_tag_name("body").send_keys(Keys.END)
         for t in articlesTags:
-            try:
-                driver.find_element_by_tag_name("body").send_keys(Keys.END)
-                articles = driver.find_elements_by_tag_name(t)
-                for a in articles:
+            articles = driver.find_elements_by_tag_name(t)
+            for a in articles:
+                try:
                     title = str(a.text)
                     if title != '' and len(title) > 40 and counter < 5:
                         links = driver.find_elements_by_tag_name("a")
                         for l in links:
                             linkUrl = str(l.get_attribute('href'))
                             if linkUrl and SequenceMatcher(None, title, linkUrl).ratio() > 0.3 and counter < 5:
-                                l.send_keys(Keys.CONTROL + Keys.RETURN)
-                                driver.switch_to.window(driver.window_handles[c])
-                                link = driver.current_url
-                                counter2 = 0
-                                for ti in timeTags:
-                                    elements = driver.find_elements_by_tag_name(ti)
-                                    time = ''
-                                    try:
-                                        for e in elements:
-                                            reg = '([0-1]?[0-9]|2[0-3]):[0-5][0-9]$'
-                                            time = re.search(reg, str(e.text))
-                                            if time and counter2 < 1:
-                                                item = {
-                                                    "title": title,
-                                                    "url": link,
-                                                    "timeAdd": time.string,
-                                                    "type": 'sport',
-                                                    "site": s
-                                                }
-                                                database.add(item)
-                                                counter += 1
-                                                counter2 += 1
-                                                c += 1
-                                                driver.switch_to.window(driver.window_handles[0])
+                                item = {
+                                    "title": title,
+                                    "url": linkUrl,
+                                    "type": 'sport'
+                                }
+                                if linkChecker != linkUrl and titleChecker != title and counter < 5:
+                                    database.add(item)
+                                    counter += 1
+                                    linkChecker = linkUrl
+                                    titleChecker = title
+                                else:
+                                    break
+                except:
+                    break
+    driver.close()
+    driver.quit()
 
-                                    except Exception as e:
-                                        driver.switch_to.window(driver.window_handles[0])
-                                        break
-            except Exception as e:
-                break
-            c = 1
+
+def get_article_details():
+    databaseD = db.getDb("details.json")
+    timeTags = ['time', 'span', 'a', 'div']
+    infoTags = ['div', 'span', 'p']
+    data = database.getByQuery({"type": 'sport'})
+    for d in range(len(data)):
+        counter = 0
+        url = data[d]["url"]
+        title = data[d]["title"]
+        driver.get(url)
+        for t in infoTags:
+            elements = driver.find_elements_by_tag_name(t)
+            for e in elements:
+                #reg = '([0-1]?[0-9]|2[0-3]):[0-5][0-9]$'
+                #time = re.search(reg, str(e.text))
+                dataCheck = databaseD.getAll()
+                for check in range(len(dataCheck)):
+                    infoChecker = dataCheck[check]['info']
+                    if counter < 1 and len(e.text) > 300 and e.text != infoChecker: #and time:
+                        item = {
+                            "title": title,
+                            "url": url,
+                            #"time": time.string,
+                            "info": e.text,
+                            "type": 'sport'
+                        }
+                        databaseD.add(item)
+                        counter += 1
+                    else:
+                        break
+
 
 
 sites_list = []
@@ -76,11 +90,7 @@ for s in sites:
 
 for s in sport_sites:
     sites_list.append("https://" + s)
-sites_list.reverse()
-get_sport_articles()
-
-
-driver.close()
-driver.quit()
+#get_sport_articles()
+get_article_details()
 
 # akceptacje coockies tvp(pobieranie), wprost, ?interia?, wp(tytul)
