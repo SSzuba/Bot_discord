@@ -1,19 +1,18 @@
-from selenium import webdriver
-from selenium.webdriver.common.keys import Keys
-from pysondb import db
 import os
-from sites import sites, sport_sites
-from coockies import coockies_accept
-from difflib import SequenceMatcher
 import re
 from datetime import datetime
+from difflib import SequenceMatcher
+from coockies import coockies_accept
+from pysondb import db
+from selenium import webdriver
+from selenium.webdriver.common.keys import Keys
+from sites import sites, sport_sites
 
 database = db.getDb("db.json")
 databaseD = db.getDb("details.json")
 driver = webdriver.Chrome()
 
 def get_sport_articles():
-    os.remove("db.json")
     database = db.getDb("db.json")
     for s in sites_list:
         driver.get(s)
@@ -31,30 +30,31 @@ def get_sport_articles():
                         links = driver.find_elements_by_tag_name("a")
                         for l in links:
                             linkUrl = str(l.get_attribute('href'))
+                            data = database.getByQuery({"title": title})
                             if linkUrl and SequenceMatcher(None, title, linkUrl).ratio() > 0.3 and counter < 5:
                                 item = {
                                     "title": title,
                                     "url": linkUrl,
                                     "type": 'sport'
                                 }
-                                if linkChecker != linkUrl and titleChecker != title and counter < 5:
+                                if linkChecker != linkUrl and titleChecker != title and counter < 5 and data == []:
                                     database.add(item)
                                     counter += 1
                                     linkChecker = linkUrl
                                     titleChecker = title
+                                    data = ''
                                 else:
                                     break
                 except:
                     break
-    driver.close()
-    driver.quit()
+    
 
 
 def get_article_details():
     databaseD = db.getDb("details.json")
-    timeTags = ['time', 'span', 'a', 'div']
     infoTags = ['div', 'span', 'p']
     data = database.getByQuery({"type": 'sport'})
+    infoChecker = ''
     for d in range(len(data)):
         counter = 0
         url = data[d]["url"]
@@ -63,16 +63,13 @@ def get_article_details():
         for t in infoTags:
             elements = driver.find_elements_by_tag_name(t)
             for e in elements:
-                #reg = '([0-1]?[0-9]|2[0-3]):[0-5][0-9]$'
-                #time = re.search(reg, str(e.text))
                 dataCheck = databaseD.getAll()
                 for check in range(len(dataCheck)):
                     infoChecker = dataCheck[check]['info']
-                    if counter < 1 and len(e.text) > 300 and e.text != infoChecker: #and time:
+                    if counter < 1 and len(e.text) > 300 and e.text != infoChecker:
                         item = {
                             "title": title,
                             "url": url,
-                            #"time": time.string,
                             "info": e.text,
                             "type": 'sport'
                         }
@@ -90,7 +87,9 @@ for s in sites:
 
 for s in sport_sites:
     sites_list.append("https://" + s)
+
 #get_sport_articles()
 get_article_details()
 
-# akceptacje coockies tvp(pobieranie), wprost, ?interia?, wp(tytul)
+driver.close()
+driver.quit()
