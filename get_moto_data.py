@@ -1,20 +1,19 @@
-import os
-import re
 from datetime import datetime
 from difflib import SequenceMatcher
 from coockies import coockies_accept
 from pysondb import db
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
-from sites import sites, sport_sites
+from sites import buisness_sites_list
 
 database = db.getDb("db.json")
 databaseD = db.getDb("details.json")
 driver = webdriver.Chrome()
 
-def get_sport_articles():
+
+def get_articles():
     database = db.getDb("db.json")
-    for s in sites_list:
+    for s in moto_sites_list:
         driver.get(s)
         articlesTags = ['h1', 'h2', 'h3', 'h4', 'a']
         linkChecker = ''
@@ -26,7 +25,7 @@ def get_sport_articles():
             for a in articles:
                 try:
                     title = str(a.text)
-                    if title != '' and len(title) > 40 and counter < 5:
+                    if title != '' and len(title) > 50 and counter < 5:
                         links = driver.find_elements_by_tag_name("a")
                         for l in links:
                             linkUrl = str(l.get_attribute('href'))
@@ -35,7 +34,7 @@ def get_sport_articles():
                                 item = {
                                     "title": title,
                                     "url": linkUrl,
-                                    "type": 'sport'
+                                    "type": 'moto'
                                 }
                                 if linkChecker != linkUrl and titleChecker != title and counter < 5 and data == []:
                                     database.add(item)
@@ -47,48 +46,49 @@ def get_sport_articles():
                                     break
                 except:
                     break
-    
 
 
 def get_article_details():
     databaseD = db.getDb("details.json")
     infoTags = ['div', 'span', 'p']
-    data = database.getByQuery({"type": 'sport'})
+    data = database.getAll()
     infoChecker = ''
+    urlCheck = database.getAll()
+    dataCheck = databaseD.getAll()
     for d in range(len(data)):
+        c = 0
         counter = 0
         url = data[d]["url"]
         title = data[d]["title"]
-        driver.get(url)
-        for t in infoTags:
-            elements = driver.find_elements_by_tag_name(t)
-            for e in elements:
-                dataCheck = databaseD.getAll()
-                for check in range(len(dataCheck)):
-                    infoChecker = dataCheck[check]['info']
-                    if counter < 1 and len(e.text) > 300 and e.text != infoChecker:
-                        item = {
-                            "title": title,
-                            "url": url,
-                            "info": e.text,
-                            "type": 'sport'
-                        }
-                        databaseD.add(item)
-                        counter += 1
-                    else:
-                        break
+        try:
+            if str(dataCheck[d]["url"]) == url:
+                c = 1
+        except:
+            c = 0
+        if c == 0:
+            try:
+                driver.get(url)
+                for t in infoTags:
+                    elements = driver.find_elements_by_tag_name(t)
+                    for e in elements:
+                        for check in range(len(dataCheck)):
+                            infoChecker = dataCheck[check]['info']
+                            if counter < 1 and len(e.text) > 300 and str(e.text) != str(infoChecker):
+                                item = {
+                                    "title": title,
+                                    "url": url,
+                                    "info": str(e.text)[0:1000],
+                                    "type": 'moto'
+                                }
+                                databaseD.add(item)
+                                counter += 1
+                            else:
+                                break
+            except:
+                break
 
 
-
-sites_list = []
-
-for s in sites:
-    sport_sites.append('sport.'+s)
-
-for s in sport_sites:
-    sites_list.append("https://" + s)
-
-#get_sport_articles()
+get_articles()
 get_article_details()
 
 driver.close()
