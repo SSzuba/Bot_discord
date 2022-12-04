@@ -1,6 +1,7 @@
 from pysondb import db
 import re 
 from datetime import datetime 
+from difflib import SequenceMatcher
 
 database = db.getDb("details.json")
 
@@ -21,10 +22,21 @@ def get_newest_article():
     return msg
         
 
-def get_articles():
-    data = database.getBy({"type": 'sport'})
-    for i in range(len(data)):
-        title = (i, data[i]["title"])
-        url = (i, data[i]["url"])
-        return title + " " + url
+def get_articles(type):
+    data = database.getByQuery({"type": str(type)})
+    title = data[len(data)-1]["title"]
+    url = data[len(data)-1]["url"]
+    return title + " " + url
 
+def get_articles_by_title(title):
+    data = database.getAll()
+    for i in range(len(data)):
+        dataTitle = data[i]['title']
+        url = data[i]['url']
+        if dataTitle.find(str(title)):
+        # if SequenceMatcher(None, str(dataTitle), str(title)).ratio() > 0.2:
+            return dataTitle + ' ' + url
+        else:
+            return 'Brak artykułów' 
+
+print(get_articles_by_title('Polska'))

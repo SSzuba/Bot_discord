@@ -19,13 +19,13 @@ def get_articles():
         linkChecker = ''
         titleChecker = ''
         counter = 0
-        driver.find_element_by_tag_name("body").send_keys(Keys.END)
         for t in articlesTags:
+            c = 0
             articles = driver.find_elements_by_tag_name(t)
-            for a in articles:
-                try:
-                    title = str(a.text)
-                    if title != '' and len(title) > 50 and counter < 5:
+            for a in articles:        
+                title = str(a.text)
+                if title != '' and len(title) > 50 and counter < 5:
+                    try:
                         links = driver.find_elements_by_tag_name("a")
                         for l in links:
                             linkUrl = str(l.get_attribute('href'))
@@ -44,17 +44,16 @@ def get_articles():
                                     data = ''
                                 else:
                                     break
-                except:
-                    break
+                    except:
+                        break
 
 
 def get_article_details():
     databaseD = db.getDb("details.json")
     infoTags = ['div', 'span', 'p']
-    data = database.getAll()
+    data = database.getByQuery({"type": 'sport'})
+    dataCheck = databaseD.getByQuery({"type": 'sport'})
     infoChecker = ''
-    urlCheck = database.getAll()
-    dataCheck = databaseD.getAll()
     for d in range(len(data)):
         c = 0
         counter = 0
@@ -88,7 +87,7 @@ def get_article_details():
                 break
 
 
-get_articles()
+#get_articles()
 get_article_details()
 
 driver.close()

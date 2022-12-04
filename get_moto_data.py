@@ -4,7 +4,7 @@ from coockies import coockies_accept
 from pysondb import db
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
-from sites import buisness_sites_list
+from sites import moto_sites_list
 
 database = db.getDb("db.json")
 databaseD = db.getDb("details.json")
@@ -19,11 +19,10 @@ def get_articles():
         linkChecker = ''
         titleChecker = ''
         counter = 0
-        driver.find_element_by_tag_name("body").send_keys(Keys.END)
-        for t in articlesTags:
+        for t in articlesTags:    
             articles = driver.find_elements_by_tag_name(t)
             for a in articles:
-                try:
+                try:    
                     title = str(a.text)
                     if title != '' and len(title) > 50 and counter < 5:
                         links = driver.find_elements_by_tag_name("a")
@@ -51,10 +50,9 @@ def get_articles():
 def get_article_details():
     databaseD = db.getDb("details.json")
     infoTags = ['div', 'span', 'p']
-    data = database.getAll()
+    data = database.getByQuery({"type": 'moto'})
+    dataCheck = databaseD.getByQuery({"type": 'moto'})
     infoChecker = ''
-    urlCheck = database.getAll()
-    dataCheck = databaseD.getAll()
     for d in range(len(data)):
         c = 0
         counter = 0
@@ -73,7 +71,12 @@ def get_article_details():
                     for e in elements:
                         for check in range(len(dataCheck)):
                             infoChecker = dataCheck[check]['info']
-                            if counter < 1 and len(e.text) > 300 and str(e.text) != str(infoChecker):
+                            try: 
+                                if str(e.text) == str(infoChecker):
+                                    c = 1
+                            except:
+                                c = 0
+                            if counter < 1 and len(e.text) > 300 and c == 0:
                                 item = {
                                     "title": title,
                                     "url": url,
@@ -88,7 +91,7 @@ def get_article_details():
                 break
 
 
-get_articles()
+#get_articles()
 get_article_details()
 
 driver.close()
