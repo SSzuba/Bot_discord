@@ -33,8 +33,8 @@ def get_articles_by_title(title):
     for i in range(len(data)):
         dataTitle = data[i]['title']
         url = data[i]['url']
-        if dataTitle.find(str(title)):
-        # if SequenceMatcher(None, str(dataTitle), str(title)).ratio() > 0.2:
+        # if dataTitle.find(str(title)):
+        if SequenceMatcher(None, str(dataTitle), str(title)).ratio() > 0.2:
             return dataTitle + ' ' + url
         else:
             return 'Brak artykułów' 
