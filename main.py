@@ -1,11 +1,12 @@
 import os
 import discord
 import use_data
+import get_data
 from discord.ext import commands
 
-TOKEN = 'OTYxOTIyMzI4MDAwODg0NzM3.G3DcYT.ArU5lRWsFaD5cs4YWU75tT-F8cix_NRdpNPBGM'
+TOKEN = 'OTYxOTIyMzI4MDAwODg0NzM3.GwNZZq.lynrZbGfi1uk-lVEFyKIdTZAQO5BYAXDg3rT00'
 
-bot = commands.Bot(command_prefix="!")
+bot = commands.Bot(intents=discord.Intents.all(), command_prefix="!")
 
 
 @bot.event
@@ -29,12 +30,12 @@ async def biznes(ctx):
 async def motoryzacja(ctx):
     msg = use_data.get_articles('moto')
     await ctx.send(str(msg))
+    
 
-
-@bot.command()
-async def szukaj(ctx, *args):
-    arguments = ' '.join(args)
-    msg = use_data.get_articles_by_title(arguments)
-    await ctx.send(str(msg))
+# @bot.command()
+# async def szukaj(ctx, *args):
+#     arguments = ' '.join(args)
+#     msg = use_data.get_articles_by_title(arguments)
+#     await ctx.send(str(msg))
 
 bot.run(TOKEN)
