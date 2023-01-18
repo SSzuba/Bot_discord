@@ -53,7 +53,6 @@ async def get_articles(list_name, type_name, ctx):
                 except:
                     break
         
-
 def get_article_details(type_name):
     infoTags = ['article', 'div', 'p', 'a', 'span']
     data = database.getByQuery({"type": type_name})
@@ -87,7 +86,6 @@ def get_article_details(type_name):
                             break
             except:
                 break
-
 
 async def check_for_updates(ctx):
     infoTags = ['article', 'div', 'p', 'a', 'span']
