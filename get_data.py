@@ -4,7 +4,6 @@ from selenium import webdriver
 from discord.ext import commands, tasks
 from sites import sport_sites_list, business_sites_list, moto_sites_list
 
-
 database = db.getDb("db.json")
 databaseDet = db.getDb("details.json")
 # for local usage
