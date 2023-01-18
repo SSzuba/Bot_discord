@@ -8,9 +8,9 @@ from sites import sport_sites_list, business_sites_list, moto_sites_list
 database = db.getDb("db.json")
 databaseDet = db.getDb("details.json")
 # for local usage
-# driver = webdriver.Chrome()
+driver = webdriver.Chrome()
 # for docker usage
-driver = webdriver.Remote('http://127.0.0.1:4444/wd/hub', options=webdriver.ChromeOptions())
+# driver = webdriver.Remote('http://127.0.0.1:4444/wd/hub', options=webdriver.ChromeOptions())
 
 async def get_articles(list_name, type_name, ctx):
     for s in list_name:
@@ -39,18 +39,17 @@ async def get_articles(list_name, type_name, ctx):
                                     linkChecker = data[d]["url"]
                                     titleChecker = data[d]["title"]
                                     try:
-                                        if linkChecker == linkUrl or SequenceMatcher(None, linkChecker, linkUrl).ratio() > 0.3:
+                                        if linkChecker == linkUrl:
                                             c = 1
-                                        elif titleChecker == title or SequenceMatcher(None, titleChecker, title).ratio() > 0.3:
+                                        elif titleChecker == title:
                                             c = 1
-                                        else:
-                                            c = 0
                                     except:
                                         c = 0
                                 if c == 0:
                                     database.add(item)
                                     await ctx.send("NEW! " + title + " " + linkUrl)
                                 else:
+                                    await asyncio.sleep(10)
                                     break
                 except:
                     break
@@ -68,8 +67,6 @@ def get_article_details(type_name):
         try:
             if str(dataCheck[d]["url"]) == url:
                 c = 1
-            else:
-                c = 0
         except:
             c = 0
         if c == 0:

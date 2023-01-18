@@ -7,7 +7,7 @@ from selenium import webdriver
 from discord.ext import commands, tasks
 from sites import sport_sites_list, business_sites_list, moto_sites_list
 
-TOKEN = 'OTYxOTIyMzI4MDAwODg0NzM3.GwNZZq.lynrZbGfi1uk-lVEFyKIdTZAQO5BYAXDg3rT00'
+TOKEN = 'OTYxOTIyMzI4MDAwODg0NzM3.GqVYCG.MkZgyTzwkNyZ0vljgaQOhfBKg4hdhppWAeAtN0'
 
 bot = commands.Bot(intents=discord.Intents.all(), command_prefix="!")
 
