@@ -1,44 +1,52 @@
-import os
 import discord
 import use_data
-from discord.ext import commands
+from get_data import get_articles, get_article_details, check_for_updates
+from difflib import SequenceMatcher
+from pysondb import db
+from selenium import webdriver
+from discord.ext import commands, tasks
+from sites import sport_sites_list, business_sites_list, moto_sites_list
 
-TOKEN = 'OTYxOTIyMzI4MDAwODg0NzM3.YlAB-g.jEsaYZnYSLJL-e2474pHd0pCB7k'
+TOKEN = 'OTYxOTIyMzI4MDAwODg0NzM3.GwNZZq.lynrZbGfi1uk-lVEFyKIdTZAQO5BYAXDg3rT00'
 
-bot = commands.Bot(command_prefix="!")
+bot = commands.Bot(intents=discord.Intents.all(), command_prefix="!")
+
 
 @bot.event
 async def on_ready():
     print(f'{bot.user} succesfully logged in!')
 
-@bot.event
-async def on_message(message):
-    if message.author == bot.user:
-        return
-    
-    if message.content == 'help':
-        messagee = message.content.split('\n')
-        output_text = '\n'.join(('test_start' + line + 'test_end') for line in messagee)
-        await message.channel.send(output_text)
-
-    
-
-    await bot.process_commands(message)
-
-
-# Start each command with the @bot.command decorater
-@bot.command()
-async def square(ctx, arg): # The name of the function is the name of the command
-    print(arg) # this is the text that follows the command
-    await ctx.send(int(arg) ** 2) # ctx.send sends text in chat
 
 @bot.command()
-async def news(ctx):
-    use_data.get_articles()
-    for i in range(5):
-        title = use_data.titles[i]
-        url = use_data.urls[i]
-        await ctx.send(str(title + " " + url))
+async def sport(ctx):
+    msg = use_data.get_articles('sport')
+    await ctx.send(str(msg))
 
+
+@bot.command()
+async def biznes(ctx):
+    msg = use_data.get_articles('biznes')
+    await ctx.send(str(msg))
+
+
+@bot.command()
+async def motoryzacja(ctx):
+    msg = use_data.get_articles('moto')
+    await ctx.send(str(msg))
+
+
+@bot.command()
+async def follow(ctx):
+    try:
+        while(True):
+            await get_articles(sport_sites_list, 'sport', ctx)
+            get_article_details('sport')
+            await get_articles(moto_sites_list, 'moto', ctx)
+            get_article_details('moto')
+            await get_articles(business_sites_list, 'biznes', ctx) 
+            get_article_details('biznes')
+            await check_for_updates(ctx)
+    except:
+        await ctx.send('ERROR! Please repeat command !follow')
 
 bot.run(TOKEN)
