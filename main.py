@@ -15,37 +15,34 @@ started_tasks = []
 url_pattern = "^https?:\\/\\/(?:www\\.)?[-a-zA-Z0-9@:%._\\+~#=]{1,256}\\.[a-zA-Z0-9()]{1,6}\\b(?:[-a-zA-Z0-9()@:%_\\+.~#?&\\/=]*)$"
 
 
-def task_generator(channel, type, new, update):
+def task_generator(channel, typ, new, update):
     t = tasks.loop(seconds=10)(get_news)
     started_tasks.append(t)
-    t.start(channel, type, new, update)
+    t.start(channel, typ, new, update)
 
 
-async def get_news(channel, type, new_counter, update_counter):
-    new = cur.execute(
-        f'SELECT title, url, status FROM articles WHERE type is "{type}" and status is "New"')
-    update = cur.execute(
-        f'SELECT title, url, status FROM articles WHERE type is "{type}" and status is "Update"')
-    count_new = count(type, "New")
-    count_update = count(type, "Update")
-    await checker(channel, type, count_new, new_counter, "New")
-    new_counter = count_new
-    await checker(channel, type, count_update, update_counter, "Update")
-    update_counter = count_update
+async def get_news(channel, typ, counter, status):
+    count_checker = count(typ, status)
+    await checker(channel, typ, count_checker, counter, status)
 
 
-async def checker(channel, type, count, counter, status):
-    if count > counter:
-        diff = count - counter
-        res2 = cur.execute(
-            f'SELECT title, url, status FROM articles WHERE type is "{type}" and status is "{status}" LIMIT {diff} OFFSET {counter}')
-        for row in res2.fetchall():
-            await channel.send(status + '! ' + row[0] + ' ' + row[1])
-            counter += 1
+async def checker(channel, typ, count_checker, counter, status):
+    while True:
+        if count_checker > counter:
+            diff = count_checker - counter
+            res2 = cur.execute(
+                f'SELECT title, url, type, status FROM articles WHERE type is "{typ}" and status is "{status}" LIMIT {diff} OFFSET {counter}')
+            for row in res2.fetchall():
+                await channel.send(status + '! ' + row[0] + ' ' + row[1])
+                counter += 1
+            await asyncio.sleep(10)
+        else:
+            count_checker = count(typ, status)
+            await asyncio.sleep(10)
 
-def count(type, status):
+def count(typ, status):
     res = cur.execute(
-        f'SELECT title, url, status FROM articles WHERE type is "{type}" and status is "{status}"')
+        f'SELECT url, type, status FROM articles WHERE type is "{typ}" and status is "{status}"')
     counter = 0
     for row in res.fetchall():
         counter += 1
@@ -59,6 +56,7 @@ async def on_ready():
 
 @bot.command(name='follow', help='!follow type - start follow news type on private channel nick-type')
 async def follow(ctx, arg):
+    founded = False
     guild = ctx.guild
     member = ctx.author
     admin_role = get(guild.roles, name="Admin")
@@ -73,15 +71,19 @@ async def follow(ctx, arg):
         for channel in ctx.guild.channels:
             if channel.name == channel_name:
                 await ctx.send("You already follow " + arg + " newses.")
+                founded = True
                 break
-        await ctx.guild.create_text_channel(channel_name, overwrites=overwrites)
-        await ctx.send('you start follow ' + arg + ' newses!')
-        for channel in ctx.guild.channels:
-            if channel.name == channel_name:
-                new = count(str(arg), "New")
-                update = count(str(arg), "Update")
-                task_generator(channel, arg, new, update)
-                break
+        if founded is False:
+            await ctx.guild.create_text_channel(channel_name, overwrites=overwrites)
+            await ctx.send('you start follow ' + arg + ' newses!')
+            for channel in ctx.guild.channels:
+                if channel.name == channel_name:
+                    new = count(str(arg), "New")
+                    update = count(str(arg), "Update")
+                    await get_news(channel, arg, new, "New")
+                    await get_news(channel, arg, new, "Update")
+                    # task_generator(channel, arg, new, update)
+                    break
     else:
         await ctx.send("Invalid type! You can follow sport, biznes or moto types.")
 
@@ -172,8 +174,8 @@ async def search(ctx, args):
 async def show_sites(ctx):
     msg = '```'
     res = cur.execute("SELECT url, type FROM sites")
-    for url, type in res.fetchall():
-        msg += url + " - " + type + "\n"
+    for row in res.fetchall():
+        msg += row[0] + " - " + row[1] + "\n"
     msg += '```'
     await ctx.send(msg)
 
