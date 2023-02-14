@@ -54,6 +54,7 @@ def get_articles(type):
                     break
 
 
+
 def get_article_details(type):
     infoTags = ['article', 'div', 'p', 'a', 'span']
     res = cur.execute(
@@ -72,49 +73,45 @@ def get_article_details(type):
                         if added is False and len(e.text) > 500:
                             details = str(e.text)[0:1000]
                             res2 = cur.execute(
-                                f'UPDATE articles SET details = {details} WHERE title = {title} AND url = {url} AND type = {type}')
+                                f'UPDATE articles SET details = "{details}" WHERE title = "{title}" AND url = "{url}" AND type = "{type}"')
                             con.commit()
                             added = True
                         else:
                             break
             except:
-                break
+              break
 
 
 def check_for_updates():
     infoTags = ['article', 'div', 'p', 'a', 'span']
-    data = databaseDet.getAll()
     res = cur.execute(
-        'SELECT title, url, details, status FROM articles')
+        'SELECT title, url, details FROM articles')
     for row in res.fetchall():
         changed = False
         title = row[0]
         url = row[1]
         details = row[2]
-        status = row[3]
         driver.get(url)
         for t in infoTags:
             try:
                 elements = driver.find_elements_by_tag_name(t)
                 for e in elements:
                     newDetails = str(e.text)[0:1000]
-                    for check in range(len(data)):
-                        if changed is False and len(e.text) > 500 and details != newDetails:
-                            now = datetime.now()
-                            date = now.strftime("%d/%m/%Y %H:%M:%S")
-                            details = newDetails
-                            res2 = cur.execute(
-                                f'UPDATE articles SET details = {details}, status = "Update", date = {date} WHERE title = {title} AND url = {url}')
-                            con.commit()
-                            changed = True
-                        else:
-                            break
+                    if changed is False and len(e.text) > 500 and details != newDetails:
+                        now = datetime.now()
+                        date = now.strftime("%d/%m/%Y %H:%M:%S")
+                        res2 = cur.execute(
+                            f'UPDATE articles SET details = "{newDetails}", status = "Update", date = "{date}" WHERE title = "{title}" AND url = "{url}"')
+                        con.commit()
+                        changed = True
+                    else:
+                        break
             except:
                 break
 
 while True:
     get_articles("sport")
-    get_article_details("sport")
+    get_article_details("sport")  
     get_articles("biznes")
     get_article_details("biznes")
     get_articles("moto")

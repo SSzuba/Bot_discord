@@ -6,6 +6,7 @@ from difflib import SequenceMatcher
 from discord.ext import commands, tasks
 from discord.utils import get
 
+
 TOKEN = 'OTYxOTIyMzI4MDAwODg0NzM3.GqVYCG.MkZgyTzwkNyZ0vljgaQOhfBKg4hdhppWAeAtN0'
 
 bot = commands.Bot(intents=discord.Intents.all(), command_prefix="!")
@@ -15,29 +16,29 @@ started_tasks = []
 url_pattern = "^https?:\\/\\/(?:www\\.)?[-a-zA-Z0-9@:%._\\+~#=]{1,256}\\.[a-zA-Z0-9()]{1,6}\\b(?:[-a-zA-Z0-9()@:%_\\+.~#?&\\/=]*)$"
 
 
-def task_generator(channel, typ, new, update):
-    t = tasks.loop(seconds=10)(get_news)
-    started_tasks.append(t)
-    t.start(channel, typ, new, update)
-
-
-async def get_news(channel, typ, counter, status):
-    count_checker = count(typ, status)
-    await checker(channel, typ, count_checker, counter, status)
-
-
-async def checker(channel, typ, count_checker, counter, status):
+async def get_news(channel, typ, new, update):
+    new_checker = count(typ, "New")
+    update_checker = count(typ, "Update")
     while True:
-        if count_checker > counter:
-            diff = count_checker - counter
+        if new_checker > new:
+            diff = new_checker - new
             res2 = cur.execute(
-                f'SELECT title, url, type, status FROM articles WHERE type is "{typ}" and status is "{status}" LIMIT {diff} OFFSET {counter}')
+                f'SELECT title, url, type, status FROM articles WHERE type is "{typ}" and status is "New" LIMIT {diff} OFFSET {new}')
             for row in res2.fetchall():
-                await channel.send(status + '! ' + row[0] + ' ' + row[1])
-                counter += 1
+                await channel.send('NEW! ' + row[0] + ' ' + row[1])
+                new += 1
+            await asyncio.sleep(10)
+        elif update_checker > update:
+            diff = update_checker - update
+            res2 = cur.execute(
+                f'SELECT title, url, type, status FROM articles WHERE type is "{typ}" and status is "Update" LIMIT {diff} OFFSET {update}')
+            for row in res2.fetchall():
+                await channel.send('UPDATE! ' + row[0] + ' ' + row[1])
+                update += 1
             await asyncio.sleep(10)
         else:
-            count_checker = count(typ, status)
+            new_checker = count(typ, "New")
+            update_checker = count(typ, "Update")
             await asyncio.sleep(10)
 
 def count(typ, status):
@@ -80,9 +81,7 @@ async def follow(ctx, arg):
                 if channel.name == channel_name:
                     new = count(str(arg), "New")
                     update = count(str(arg), "Update")
-                    await get_news(channel, arg, new, "New")
-                    await get_news(channel, arg, new, "Update")
-                    # task_generator(channel, arg, new, update)
+                    await get_news(channel, arg, new, update)
                     break
     else:
         await ctx.send("Invalid type! You can follow sport, biznes or moto types.")
@@ -145,26 +144,40 @@ async def rem_site(ctx, arg):
     else:
         await ctx.send('This site is not in database!')
 
-# ADVANCE SEARCH
 
-
-@bot.command(name='search', help='!search text - you can search newest article having text in title.')
-async def search(ctx, args):
-    res = cur.execute("SELECT title, url, details FROM articles")
+@bot.command(name='search', help='!search text - you can search newest article having typed text in title.')
+async def search(ctx, *args):
+    res = cur.execute("SELECT title, url, date FROM articles")
     founded = False
+    match_counter = 0
+    counter_words = 0
+    counter_args = 0
     param = ''
     for a in args:
         param += a + ' '
-    param = param.lower()
+        counter_args += 1
+    await ctx.send("Looking for newest: " + param + "article")
+    param_list = param.split()
     for row in reversed(res.fetchall()):
         title = str(row[0]).lower()
         url = str(row[1])
-        details = str(row[2]).lower()
-        matcher = SequenceMatcher(None, param, title).ratio()
-        print(matcher)
-        if title.find(param) != -1 or details.find(param) != -1 or matcher > 0.2:
-            await ctx.send(title + " " + url)
-            founded = True
+        date = str(row[2])
+        title_list = title.split()
+        for p in param_list:
+            for t in title_list:
+                matcher = SequenceMatcher(None, p, t).ratio()
+                if matcher > 0.8:
+                    counter_words += 1
+                    match_counter += matcher
+            if match_counter != 0 and counter_words != 0:
+                sim = match_counter / counter_words
+            else:
+                sim = 0
+            if sim > 0.8 and counter_words >= counter_args:
+                await ctx.send(date + ": " + title + " " + url)
+                founded = True
+                break
+        if founded is True:
             break
     if founded is False:
         await ctx.send("No articles!")
