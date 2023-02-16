@@ -5,9 +5,10 @@ import asyncio
 from difflib import SequenceMatcher
 from discord.ext import commands, tasks
 from discord.utils import get
+from urllib.parse import urlparse
 
 
-TOKEN = 'OTYxOTIyMzI4MDAwODg0NzM3.GqVYCG.MkZgyTzwkNyZ0vljgaQOhfBKg4hdhppWAeAtN0'
+TOKEN = 'TOKEN'
 
 bot = commands.Bot(intents=discord.Intents.all(), command_prefix="!")
 con = sqlite3.connect("database.db")
@@ -111,14 +112,17 @@ async def unfollow(ctx, arg):
 async def add_site(ctx, arg1, arg2):
     founded = False
     site = str(arg1)
-    res = cur.execute(f'SELECT url FROM sites WHERE url = "{site}"')
-    url = res.fetchone()
-    if url[0] == arg1:
-        founded = True
+    if site[-1] == "/":
+        site = "".join(site.rsplit(site[-1:], 1))
+    res = cur.execute(f'SELECT url FROM sites')
+    for row in res.fetchall():
+        if row[0] == site:
+            founded = True
+            break
     if arg2 == "sport" or arg2 == "moto" or arg2 == "biznes":
         if founded is True:
             await ctx.send(f'{site} already added!')
-        elif re.match(url_pattern, site):
+        elif re.match(url_pattern, site) and founded is False:
             cur.execute('INSERT INTO sites VALUES (?, ?)', (site, arg2))
             con.commit()
             await ctx.send("You added new site " + site)
@@ -133,10 +137,13 @@ async def add_site(ctx, arg1, arg2):
 async def rem_site(ctx, arg):
     founded = False
     site = str(arg)
-    res = cur.execute(f'SELECT url FROM sites WHERE url = "{site}"')
-    url = res.fetchone()
-    if url[0] == arg1:
-        founded = True
+    res = cur.execute(f'SELECT url FROM sites')
+    if site[-1] == "/":
+        site = "".join(site.rsplit(site[-1:], 1))
+    for row in res.fetchall():
+        if row[0] == site:
+            founded = True
+            break
     if founded is True:
         cur.execute(f'DELETE FROM sites WHERE url = "{site}"')
         con.commit()
@@ -162,22 +169,23 @@ async def search(ctx, *args):
         title = str(row[0]).lower()
         url = str(row[1])
         date = str(row[2])
-        title_list = title.split()
+        url_parse = urlparse(url)
+        url_parse = str(url_parse.path).replace("-", " ").replace("/", " ")
+        check_text = title + " " + url_parsez
+        check_list = check_text.split()
         for p in param_list:
-            for t in title_list:
-                matcher = SequenceMatcher(None, p, t).ratio()
+            for c in check_list:
+                matcher = SequenceMatcher(None, p, c).ratio()
                 if matcher > 0.8:
                     counter_words += 1
-                    match_counter += matcher
+                    match_counter += matcher        
             if match_counter != 0 and counter_words != 0:
                 sim = match_counter / counter_words
             else:
                 sim = 0
-            if sim > 0.8 and counter_words >= counter_args:
-                await ctx.send(date + ": " + title + " " + url)
-                founded = True
-                break
-        if founded is True:
+        if sim > 0.8 and counter_words >= counter_args:
+            await ctx.send(date + ": " + title + " " + url)
+            founded = True
             break
     if founded is False:
         await ctx.send("No articles!")
@@ -185,7 +193,7 @@ async def search(ctx, *args):
 
 @bot.command(name='show_sites', help='!show_sites - you can check news sites.')
 async def show_sites(ctx):
-    msg = '```'
+    msg = '```\n'
     res = cur.execute("SELECT url, type FROM sites")
     for row in res.fetchall():
         msg += row[0] + " - " + row[1] + "\n"
@@ -195,7 +203,7 @@ async def show_sites(ctx):
 
 @bot.command(name='show_types', help='!show_types - you can check news types.')
 async def show_types(ctx):
-    msg = '```'
+    msg = '```\n'
     res = cur.execute("SELECT type FROM sites GROUP BY type")
     for row in res.fetchall():
         msg += str(row[0]) + "\n"
