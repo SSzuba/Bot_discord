@@ -8,7 +8,7 @@ from discord.utils import get
 from urllib.parse import urlparse
 
 
-TOKEN = 'TOKEN'
+TOKEN = 'token'
 
 bot = commands.Bot(intents=discord.Intents.all(), command_prefix="!")
 con = sqlite3.connect("database.db")
@@ -171,7 +171,7 @@ async def search(ctx, *args):
         date = str(row[2])
         url_parse = urlparse(url)
         url_parse = str(url_parse.path).replace("-", " ").replace("/", " ")
-        check_text = title + " " + url_parsez
+        check_text = title + " " + url_parse
         check_list = check_text.split()
         for p in param_list:
             for c in check_list:
