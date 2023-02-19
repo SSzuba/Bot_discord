@@ -1,6 +1,7 @@
 # Bot_discord
 
-Do uruchomienia programu służy plik main.py
+Do uruchomienia bota służy plik main.py
+Do uruchomienia scrapera służy plik get_data.py
 
 Bot wykorzystuje bibliotekę Selenium, w tym celu potrzebujemy obsługę sterownika, która jest zdefiniowana w pliku get_data.py
 
