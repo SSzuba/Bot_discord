@@ -46,7 +46,7 @@ def get_articles(type):
                                     now = datetime.now()
                                     date = now.strftime("%d/%m/%Y %H:%M:%S")
                                     res2 = cur.execute(
-                                        "INSERT INTO articles VALUES(?, ?, ?, ?, ?, ?)", (title, linkUrl, "det", type, date, "New"))
+                                        f'INSERT INTO articles(title, url, details, type, date, status) VALUES("{title}", "{linkUrl}", "det", "{type}", "{date}", "New" )')
                                     con.commit()
                                 else:
                                     break

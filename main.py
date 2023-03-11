@@ -2,19 +2,19 @@ import discord
 import sqlite3
 import re
 import asyncio
+import validators
+import requests
 from difflib import SequenceMatcher
-from discord.ext import commands, tasks
+from discord.ext import commands
 from discord.utils import get
 from urllib.parse import urlparse
 
 
-TOKEN = 'token'
+TOKEN = 'OTYxOTIyMzI4MDAwODg0NzM3.GhQcR9.dDEi7Ij1mLxjcQN7luU5KaBylZB_vpwXrJhRrE'
 
 bot = commands.Bot(intents=discord.Intents.all(), command_prefix="!")
 con = sqlite3.connect("database.db")
 cur = con.cursor()
-started_tasks = []
-url_pattern = "^https?:\\/\\/(?:www\\.)?[-a-zA-Z0-9@:%._\\+~#=]{1,256}\\.[a-zA-Z0-9()]{1,6}\\b(?:[-a-zA-Z0-9()@:%_\\+.~#?&\\/=]*)$"
 
 
 async def get_news(channel, typ, new, update):
@@ -69,7 +69,7 @@ async def follow(ctx, arg):
     }
     channel_name = str(member) + ' ' + str(arg)
     channel_name = channel_name.replace(" ", "-").lower().replace("#", "")
-    if arg == "sport" or arg == "moto" or arg == "biznes":
+    if check_for_type(arg):
         for channel in ctx.guild.channels:
             if channel.name == channel_name:
                 await ctx.send("You already follow " + arg + " newses.")
@@ -85,7 +85,7 @@ async def follow(ctx, arg):
                     await get_news(channel, arg, new, update)
                     break
     else:
-        await ctx.send("Invalid type! You can follow sport, biznes or moto types.")
+        await ctx.send("Invalid type! Use !show_types to check avaible types.")
 
 
 @bot.command(name='unfollow', help='!unfollow type - stop follow news type')
@@ -106,7 +106,6 @@ async def unfollow(ctx, arg):
     if deleted is False:
         await ctx.send("You don't follow this type!")
 
-
 @bot.command(name='add_site', help='!add_site url type - users with admin permission can add news sites.')
 @commands.has_permissions(administrator=True)
 async def add_site(ctx, arg1, arg2):
@@ -114,37 +113,46 @@ async def add_site(ctx, arg1, arg2):
     site = str(arg1)
     if site[-1] == "/":
         site = "".join(site.rsplit(site[-1:], 1))
-    res = cur.execute(f'SELECT url FROM sites')
-    for row in res.fetchall():
-        if row[0] == site:
-            founded = True
-            break
-    if arg2 == "sport" or arg2 == "moto" or arg2 == "biznes":
-        if founded is True:
+    site_parse = urlparse(site)
+    site = site_parse.scheme + "://" + site_parse.hostname
+    validation = validators.url(site)
+    try:    
+        response = requests.get(site)
+    except:
+        await ctx.send("Site doesn't exist!")
+    res = cur.execute(f'SELECT url FROM sites WHERE url = "{site}"')
+    row = res.fetchone()
+    if check_for_type(arg2):
+        if row != None:
             await ctx.send(f'{site} already added!')
-        elif re.match(url_pattern, site) and founded is False:
-            cur.execute('INSERT INTO sites VALUES (?, ?)', (site, arg2))
+        elif validation and row == None and response.status_code == 200:
+            cur.execute(f'INSERT INTO sites(url, type) VALUES ("{site}", "{arg2}")')
             con.commit()
             await ctx.send("You added new site " + site)
         else:
             await ctx.send("Wrong URL! Example: https://site.pl")
-    else:
-        await ctx.send("Invalid type! You can add sport, biznes or moto types site.")
+    else:    
+        await ctx.send("Invalid type! Use !show_types to check avaible types.")
 
 
-@bot.command(name='rem_site', help='!add_site url - users with admin permission can remove news sites.')
+def check_for_type(type):
+    res = cur.execute(f'SELECT type FROM sites WHERE type = "{type}" GROUP BY type')
+    if res.fetchone() is not None:
+        return True
+    else: 
+        return False
+
+
+@bot.command(name='rem_site', help='!rem_site url - users with admin permission can remove news sites.')
 @commands.has_permissions(administrator=True)
 async def rem_site(ctx, arg):
     founded = False
     site = str(arg)
-    res = cur.execute(f'SELECT url FROM sites')
     if site[-1] == "/":
         site = "".join(site.rsplit(site[-1:], 1))
-    for row in res.fetchall():
-        if row[0] == site:
-            founded = True
-            break
-    if founded is True:
+    res = cur.execute(f'SELECT url FROM sites WHERE url = "{site}"')
+    row = res.fetchone()
+    if row != None:
         cur.execute(f'DELETE FROM sites WHERE url = "{site}"')
         con.commit()
         await ctx.send(f'You deleted {site} from database!')
@@ -152,7 +160,7 @@ async def rem_site(ctx, arg):
         await ctx.send('This site is not in database!')
 
 
-@bot.command(name='search', help='!search text - you can search newest article having typed text in title.')
+@bot.command(name='search', help='!search text - you can search newest article having typed text in title from database.')
 async def search(ctx, *args):
     res = cur.execute("SELECT title, url, date FROM articles")
     founded = False
@@ -209,5 +217,6 @@ async def show_types(ctx):
         msg += str(row[0]) + "\n"
     msg += '```'
     await ctx.send(msg)
+
 
 bot.run(TOKEN)
