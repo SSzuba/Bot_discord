@@ -11,8 +11,7 @@ def test_check_for_type_biznes() -> None:
   assert check_for_type("biznes")
 
 def test_check_for_type_non_exist() -> None:
-  with pytest.raises(AssertionError):
-    assert check_for_type("wiadomosci")
+  assert not check_for_type("wiadomosci")
 
 def test_count_New() -> None:
   assert count("sport", "New") > 0
@@ -25,13 +24,12 @@ def test_count_Update() -> None:
   assert count("biznes", "Update") > 0
 
 def test_count_wrong_params() -> None:
-  with pytest.raises(AssertionError):
-    assert count("sport", "nowe") > 0
-    assert count("motorowe", "nowe") > 0
-    assert count("biznes", "nowe") > 0
-    assert count("sportowe", "Update") > 0
-    assert count("moto", "aktualizacja") > 0
-    assert count("biznesowe", "zmiana") > 0
+  assert not count("sport", "nowe") > 0
+  assert not count("motorowe", "nowe") > 0
+  assert not count("biznes", "nowe") > 0
+  assert not count("sportowe", "Update") > 0
+  assert not count("moto", "aktualizacja") > 0
+  assert not count("biznesowe", "zmiana") > 0
 
 def test_geters() -> None:
   assert get_sites()
@@ -39,6 +37,6 @@ def test_geters() -> None:
 
 def test_check_site() -> None:
   assert check_site("https://www.onet.pl/") == True
-  assert check_site("https://www.onet.pl/sportowe/wiadomosci") != True
+  assert check_site("https://www.onet.pl/sportowe/wiadomosci") == False
   assert check_site("https://www.jakas.tam.strona.pl/") != True
 
