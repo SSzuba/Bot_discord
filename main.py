@@ -10,7 +10,7 @@ from discord.utils import get
 from urllib.parse import urlparse
 
 
-TOKEN = 'OTYxOTIyMzI4MDAwODg0NzM3.GhQcR9.dDEi7Ij1mLxjcQN7luU5KaBylZB_vpwXrJhRrE'
+TOKEN = 'token'
 
 bot = commands.Bot(intents=discord.Intents.all(), command_prefix="!")
 con = sqlite3.connect("database.db")
@@ -116,23 +116,32 @@ async def add_site(ctx, arg1, arg2):
     site_parse = urlparse(site)
     site = site_parse.scheme + "://" + site_parse.hostname
     validation = validators.url(site)
-    try:    
-        response = requests.get(site)
-    except:
-        await ctx.send("Site doesn't exist!")
+    checker = check_site(site)
     res = cur.execute(f'SELECT url FROM sites WHERE url = "{site}"')
     row = res.fetchone()
     if check_for_type(arg2):
         if row != None:
             await ctx.send(f'{site} already added!')
-        elif validation and row == None and response.status_code == 200:
+        elif validation and row == None and checker == True:
             cur.execute(f'INSERT INTO sites(url, type) VALUES ("{site}", "{arg2}")')
             con.commit()
             await ctx.send("You added new site " + site)
+        elif checker == False:    
+            await ctx.send("Site doesn't exist!")
         else:
             await ctx.send("Wrong URL! Example: https://site.pl")
     else:    
         await ctx.send("Invalid type! Use !show_types to check avaible types.")
+
+def check_site(site):
+    try:    
+        response = requests.get(site)
+        if response.status_code == 200:
+            return True
+        else:
+            return False
+    except:
+        return False
 
 
 def check_for_type(type):
@@ -201,22 +210,29 @@ async def search(ctx, *args):
 
 @bot.command(name='show_sites', help='!show_sites - you can check news sites.')
 async def show_sites(ctx):
+    msg = get_sites()
+    await ctx.send(msg)
+
+def get_sites():
     msg = '```\n'
     res = cur.execute("SELECT url, type FROM sites")
     for row in res.fetchall():
         msg += row[0] + " - " + row[1] + "\n"
     msg += '```'
-    await ctx.send(msg)
+    return msg
 
 
 @bot.command(name='show_types', help='!show_types - you can check news types.')
 async def show_types(ctx):
+    msg = get_types()
+    await ctx.send(msg)
+
+def get_types():
     msg = '```\n'
     res = cur.execute("SELECT type FROM sites GROUP BY type")
     for row in res.fetchall():
         msg += str(row[0]) + "\n"
     msg += '```'
-    await ctx.send(msg)
-
+    return msg
 
 bot.run(TOKEN)
