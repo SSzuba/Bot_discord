@@ -24,7 +24,7 @@ async def get_news(channel, typ, new, update):
         if new_checker > new:
             diff = new_checker - new
             res2 = cur.execute(
-                f'SELECT title, url, type, status FROM articles WHERE type is "{typ}" and status is "New" LIMIT {diff} OFFSET {new}')
+                'SELECT title, url, type, status FROM articles WHERE type is ? and status is "New" LIMIT ? OFFSET ?', (typ, diff, new))
             for row in res2.fetchall():
                 await channel.send('NEW! ' + row[0] + ' ' + row[1])
                 new += 1
@@ -32,7 +32,7 @@ async def get_news(channel, typ, new, update):
         elif update_checker > update:
             diff = update_checker - update
             res2 = cur.execute(
-                f'SELECT title, url, type, status FROM articles WHERE type is "{typ}" and status is "Update" LIMIT {diff} OFFSET {update}')
+                'SELECT title, url, type, status FROM articles WHERE type is ? and status is "Update" LIMIT ? OFFSET ?', (typ, diff, update))
             for row in res2.fetchall():
                 await channel.send('UPDATE! ' + row[0] + ' ' + row[1])
                 update += 1
@@ -44,7 +44,7 @@ async def get_news(channel, typ, new, update):
 
 def count(typ, status):
     res = cur.execute(
-        f'SELECT url, type, status FROM articles WHERE type is "{typ}" and status is "{status}"')
+        'SELECT url, type, status FROM articles WHERE type is ? and status is ?', (typ, status))
     counter = 0
     for row in res.fetchall():
         counter += 1
@@ -117,13 +117,13 @@ async def add_site(ctx, arg1, arg2):
     site = site_parse.scheme + "://" + site_parse.hostname
     validation = validators.url(site)
     checker = check_site(site)
-    res = cur.execute(f'SELECT url FROM sites WHERE url = "{site}"')
+    res = cur.execute('SELECT url FROM sites WHERE url = ?', (site,))
     row = res.fetchone()
     if check_for_type(arg2):
         if row != None:
             await ctx.send(f'{site} already added!')
         elif validation and row == None and checker == True:
-            cur.execute(f'INSERT INTO sites(url, type) VALUES ("{site}", "{arg2}")')
+            cur.execute('INSERT INTO sites(url, type) VALUES (?, ?)', (site,arg2))
             con.commit()
             await ctx.send("You added new site " + site)
         elif checker == False:    
@@ -145,7 +145,7 @@ def check_site(site):
 
 
 def check_for_type(type):
-    res = cur.execute(f'SELECT type FROM sites WHERE type = "{type}" GROUP BY type')
+    res = cur.execute('SELECT type FROM sites WHERE type = ? GROUP BY type', (type,))
     if res.fetchone() is not None:
         return True
     else: 
@@ -159,10 +159,10 @@ async def rem_site(ctx, arg):
     site = str(arg)
     if site[-1] == "/":
         site = "".join(site.rsplit(site[-1:], 1))
-    res = cur.execute(f'SELECT url FROM sites WHERE url = "{site}"')
+    res = cur.execute('SELECT url FROM sites WHERE url = ?', (site,))
     row = res.fetchone()
     if row != None:
-        cur.execute(f'DELETE FROM sites WHERE url = "{site}"')
+        cur.execute('DELETE FROM sites WHERE url = ?', (site,))
         con.commit()
         await ctx.send(f'You deleted {site} from database!')
     else:
