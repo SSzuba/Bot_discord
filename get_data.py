@@ -13,7 +13,7 @@ driver = webdriver.Chrome()
 
 
 def get_articles(type):
-    res = cur.execute(f'SELECT url, type FROM sites WHERE type = "{type}"')
+    res = cur.execute('SELECT url, type FROM sites WHERE type = ?', (type,))
     sites = []
     for row in res.fetchall():
         url = row[0]
@@ -33,8 +33,7 @@ def get_articles(type):
                         links = driver.find_elements_by_tag_name("a")
                         for l in links:
                             linkUrl = str(l.get_attribute('href'))
-                            res = cur.execute(
-                                f'SELECT title, url FROM articles WHERE type = "{type}"')
+                            res = cur.execute('SELECT title, url FROM articles WHERE type = ?', (type,))
                             if len(linkUrl) > 50 and SequenceMatcher(None, title, linkUrl).ratio() > 0.3:
                                 founded = False
                                 for row in res.fetchall():
@@ -46,7 +45,7 @@ def get_articles(type):
                                     now = datetime.now()
                                     date = now.strftime("%d/%m/%Y %H:%M:%S")
                                     res2 = cur.execute(
-                                        f'INSERT INTO articles(title, url, details, type, date, status) VALUES("{title}", "{linkUrl}", "det", "{type}", "{date}", "New" )')
+                                        f'INSERT INTO articles(title, url, details, type, date, status) VALUES(?, ?, ?, ?, ?, ?)', (title, linkUrl, "det", type, date, "New"))
                                     con.commit()
                                 else:
                                     break
@@ -57,8 +56,7 @@ def get_articles(type):
 
 def get_article_details(type):
     infoTags = ['article', 'div', 'p', 'a', 'span']
-    res = cur.execute(
-        f'SELECT title, url, details FROM articles WHERE type = "{type}"')
+    res = cur.execute('SELECT title, url, details FROM articles WHERE type = ?', (type,))
     for row in res.fetchall():
         added = False
         title = row[0]
@@ -73,10 +71,10 @@ def get_article_details(type):
                         if added is False and len(e.text) > 500:
                             details = str(e.text)[0:1000]
                             res2 = cur.execute(
-                                f'UPDATE articles SET details = "{details}" WHERE title = "{title}" AND url = "{url}" AND type = "{type}"')
+                                'UPDATE articles SET details = ? WHERE title = ? AND url = ? AND type = ?', (details, title, url, type))
                             con.commit()
                             added = True
-                        else:
+                        elif added is True:
                             break
             except:
               break
@@ -101,20 +99,20 @@ def check_for_updates():
                         now = datetime.now()
                         date = now.strftime("%d/%m/%Y %H:%M:%S")
                         res2 = cur.execute(
-                            f'UPDATE articles SET details = "{newDetails}", status = "Update", date = "{date}" WHERE title = "{title}" AND url = "{url}"')
+                            'UPDATE articles SET details = ?, status = "Update", date = ? WHERE title = ? AND url = ?', (newDetails, date, title, url))
                         con.commit()
                         changed = True
-                    else:
+                    elif changed is True:
                         break
             except:
                 break
 
 while True:
-    get_articles("sport")
-    get_article_details("sport")  
-    get_articles("biznes")
-    get_article_details("biznes")
-    get_articles("moto")
-    get_article_details("moto")
+    #get_articles("sport")
+    #get_article_details("sport")  
+    #get_articles("biznes")
+    # get_article_details("biznes")
+    # get_articles("moto")
+    # get_article_details("moto")
     check_for_updates()
 
